@@ -5,10 +5,7 @@
       "destination": "/index.html"
     }
   ],
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/node"
-    }
-  ]
+  "buildCommand": "npm run build",
+  "outputDirectory": "build",
+  "framework": "create-react-app"
 } 
