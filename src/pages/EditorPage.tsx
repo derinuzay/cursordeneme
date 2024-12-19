@@ -93,7 +93,7 @@ const generateImages = async () => {
       let lines: string[] = [];
       let currentLine = '';
 
-      words.forEach((word) => {
+      (words as string[]).forEach((word: string) => {
         const testLine = currentLine + (currentLine ? ' ' : '') + word;
         const metrics = ctx.measureText(testLine);
 
