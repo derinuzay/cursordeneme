@@ -139,12 +139,16 @@ const generateImages = async () => {
     const dataUrl = canvas.toDataURL('image/png');
     const numara = item.numara || `image-${index + 1}`;
 
-    const link = document.createElement('a');
-    link.download = `${numara}.png`;
-    link.href = dataUrl;
+  const link = document.createElement('a');
+  link.download = `${numara}.png`;
+  link.href = dataUrl;
+
+  // Gecikmeli olarak fotoğrafı indirmeyi başlat
+  setTimeout(() => {
     link.click();
-  }
-};
+  }, 100 * index); // Her iterasyonda 100ms gecikme
+}
+
 
 
 
