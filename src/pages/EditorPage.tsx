@@ -46,105 +46,112 @@ export default function EditorPage() {
     setSelectedBox(id);
   };
 
-  const generateImages = async () => {
-    if (!jsonData || !imageFile || textBoxes.length === 0 || !imageRef) return;
+const generateImages = async () => {
+  if (!jsonData || !imageFile || textBoxes.length === 0 || !imageRef) return;
 
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+  const canvas = document.createElement('canvas');
+  const ctx = canvas.getContext('2d');
+  if (!ctx) return;
 
-    const img = new Image();
-    img.src = imageUrl;
-    await new Promise(resolve => img.onload = resolve);
+  const img = new Image();
+  img.src = imageUrl;
+  await new Promise((resolve) => (img.onload = resolve));
 
-    const imageRect = imageRef.getBoundingClientRect();
-    const containerRect = imageRef.parentElement?.getBoundingClientRect();
-    if (!containerRect) return;
+  canvas.width = img.naturalWidth;
+  canvas.height = img.naturalHeight;
 
-    const imageOffsetX = imageRect.left - containerRect.left;
-    
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
+  const imageRect = imageRef.getBoundingClientRect();
+  const containerRect = imageRef.parentElement?.getBoundingClientRect();
+  if (!containerRect) return;
 
-    const newImages = await Promise.all((jsonData as JsonItem[]).map(async (item: JsonItem) => {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0);
+  const imageOffsetX = imageRect.left - containerRect.left;
 
-      textBoxes.forEach(box => {
-        if (!box.jsonKey) return;
+  for (const [index, item] of jsonData.entries()) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0);
 
-        const scaleX = img.naturalWidth / imageRect.width;
-        const scaleY = img.naturalHeight / imageRect.height;
+    textBoxes.forEach((box) => {
+      if (!box.jsonKey) return;
 
-        const scaledFontSize = Math.round(box.fontSize * scaleX);
-        ctx.font = `${scaledFontSize}px ${box.fontFamily}`;
-        ctx.fillStyle = box.color;
-        ctx.textBaseline = 'middle';
-        ctx.textAlign = (box.textAlign as CanvasTextAlign) || 'left';
+      const scaleX = img.naturalWidth / imageRect.width;
+      const scaleY = img.naturalHeight / imageRect.height;
 
-        const text = item[box.jsonKey]?.toString() || '';
-        
-        const relativeX = box.x - imageOffsetX;
-        const scaledX = relativeX * scaleX;
-        const scaledY = box.y * scaleY;
-        const scaledWidth = box.width * scaleX;
+      const scaledFontSize = Math.round(box.fontSize * scaleX);
+      ctx.font = `${scaledFontSize}px ${box.fontFamily}`;
+      ctx.fillStyle = box.color;
+      ctx.textBaseline = 'middle';
+      ctx.textAlign = (box.textAlign as CanvasTextAlign) || 'left';
 
-        const words = text.split(' ');
-        let lines: string[] = [];
-        let currentLine = '';
+      const text = item[box.jsonKey]?.toString() || '';
 
-        words.forEach(word => {
-          const testLine = currentLine + (currentLine ? ' ' : '') + word;
-          const metrics = ctx.measureText(testLine);
-          
-          if (metrics.width > scaledWidth && currentLine) {
-            lines.push(currentLine);
-            currentLine = word;
-          } else {
-            currentLine = testLine;
-          }
-        });
-        if (currentLine) {
+      const relativeX = box.x - imageOffsetX;
+      const scaledX = relativeX * scaleX;
+      const scaledY = box.y * scaleY;
+      const scaledWidth = box.width * scaleX;
+
+      const words = text.split(' ');
+      let lines: string[] = [];
+      let currentLine = '';
+
+      words.forEach((word) => {
+        const testLine = currentLine + (currentLine ? ' ' : '') + word;
+        const metrics = ctx.measureText(testLine);
+
+        if (metrics.width > scaledWidth && currentLine) {
           lines.push(currentLine);
+          currentLine = word;
+        } else {
+          currentLine = testLine;
         }
-
-        const lineHeight = scaledFontSize * 1.2;
-        lines.forEach((line, i) => {
-          if (box.textAlign === 'justify' && i < lines.length - 1) {
-            const words = line.split(' ');
-            const spaceWidth = (scaledWidth - ctx.measureText(line.replace(/ /g, '')).width) / (words.length - 1);
-            let currentX = scaledX;
-
-            words.forEach((word, j) => {
-              ctx.fillText(word, currentX, scaledY + (i * lineHeight) + (scaledFontSize / 2));
-              if (j < words.length - 1) {
-                currentX += ctx.measureText(word).width + spaceWidth;
-              }
-            });
-          } else {
-            let textX = scaledX;
-            if (box.textAlign === 'center') {
-              textX = scaledX + (scaledWidth / 2);
-            } else if (box.textAlign === 'right') {
-              textX = scaledX + scaledWidth;
-            }
-
-            ctx.fillText(line, textX, scaledY + (i * lineHeight) + (scaledFontSize / 2));
-          }
-        });
       });
+      if (currentLine) {
+        lines.push(currentLine);
+      }
 
-      return canvas.toDataURL('image/png');
-    }));
+      const lineHeight = scaledFontSize * 1.2;
+      lines.forEach((line, i) => {
+        if (box.textAlign === 'justify' && i < lines.length - 1) {
+          const words = line.split(' ');
+          const spaceWidth =
+            (scaledWidth - ctx.measureText(line.replace(/ /g, '')).width) /
+            (words.length - 1);
+          let currentX = scaledX;
 
-    newImages.forEach((dataUrl, index) => {
-      const link = document.createElement('a');
-      link.download = `image-${index + 1}.png`;
-      link.href = dataUrl;
-      link.click();
+          words.forEach((word, j) => {
+            ctx.fillText(word, currentX, scaledY + i * lineHeight + scaledFontSize / 2);
+            if (j < words.length - 1) {
+              currentX += ctx.measureText(word).width + spaceWidth;
+            }
+          });
+        } else {
+          let textX = scaledX;
+          if (box.textAlign === 'center') {
+            textX = scaledX + scaledWidth / 2;
+          } else if (box.textAlign === 'right') {
+            textX = scaledX + scaledWidth;
+          }
+
+          ctx.fillText(line, textX, scaledY + i * lineHeight + scaledFontSize / 2);
+        }
+      });
     });
-  };
 
+    const dataUrl = canvas.toDataURL('image/png');
+    const numara = item.numara || `image-${index + 1}`;
+
+    const link = document.createElement('a');
+    link.download = `${numara}.png`;
+    link.href = dataUrl;
+    link.click();
+  }
+};
+
+
+
+
+
+
+  
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-6xl mx-auto">
