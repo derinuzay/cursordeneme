@@ -143,12 +143,13 @@ const generateImages = async () => {
   link.download = `${numara}.png`;
   link.href = dataUrl;
 
-  // Gecikmeli olarak fotoğrafı indirmeyi başlat
-  setTimeout(() => {
-    link.click();
-  }, 100 * index); // Her iterasyonda 100ms gecikme
-}
-
+    // Bekleyerek fotoğrafı indirmeyi başlat
+    await new Promise((resolve) => setTimeout(() => {
+      link.click();
+      resolve(undefined);
+    }, 100 * index)); // 100ms gecikme her iterasyonda
+  }
+};
 
 
 
